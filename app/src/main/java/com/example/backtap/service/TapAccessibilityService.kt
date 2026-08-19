@@ -26,12 +26,24 @@ class TapAccessibilityService : AccessibilityService() {
     private var doubleTapAction = "NONE"
     private var tripleTapAction = "NONE"
     private var isMasterToggleOn = true
+    private var isFlashlightOn = false
 
     private lateinit var systemStateReceiver: SystemStateReceiver
+    private lateinit var cameraManager: android.hardware.camera2.CameraManager
+
+    private val torchCallback = object : android.hardware.camera2.CameraManager.TorchCallback() {
+        override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
+            super.onTorchModeChanged(cameraId, enabled)
+            isFlashlightOn = enabled
+        }
+    }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         Log.d("TapService", "Service Connected")
+
+        cameraManager = getSystemService(android.content.Context.CAMERA_SERVICE) as android.hardware.camera2.CameraManager
+        cameraManager.registerTorchCallback(torchCallback, android.os.Handler(android.os.Looper.getMainLooper()))
 
         systemStateReceiver = SystemStateReceiver { shouldRun ->
             if (shouldRun && isMasterToggleOn) {
@@ -117,7 +129,42 @@ class TapAccessibilityService : AccessibilityService() {
             "VOLUME_UP" -> adjustVolume(android.media.AudioManager.ADJUST_RAISE)
             "VOLUME_DOWN" -> adjustVolume(android.media.AudioManager.ADJUST_LOWER)
             "MUTE_UNMUTE" -> adjustVolume(android.media.AudioManager.ADJUST_TOGGLE_MUTE)
+            "TOGGLE_FLASHLIGHT" -> toggleFlashlight()
+            "CYCLE_RINGER" -> cycleRingerMode()
             "NONE" -> { /* Do nothing */ }
+        }
+    }
+
+    private fun toggleFlashlight() {
+        try {
+            val cameraId = cameraManager.cameraIdList.firstOrNull { id ->
+                cameraManager.getCameraCharacteristics(id).get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+            }
+            if (cameraId != null) {
+                cameraManager.setTorchMode(cameraId, !isFlashlightOn)
+            }
+        } catch (e: Exception) {
+            Log.e("TapService", "Failed to toggle flashlight: ${e.message}")
+        }
+    }
+
+    private fun cycleRingerMode() {
+        try {
+            val audioManager = getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
+            when (audioManager.ringerMode) {
+                android.media.AudioManager.RINGER_MODE_NORMAL -> audioManager.ringerMode = android.media.AudioManager.RINGER_MODE_VIBRATE
+                android.media.AudioManager.RINGER_MODE_VIBRATE -> {
+                    try {
+                        audioManager.ringerMode = android.media.AudioManager.RINGER_MODE_SILENT
+                    } catch (e: SecurityException) {
+                        // Fallback to normal if Do Not Disturb access is not granted
+                        audioManager.ringerMode = android.media.AudioManager.RINGER_MODE_NORMAL
+                    }
+                }
+                android.media.AudioManager.RINGER_MODE_SILENT -> audioManager.ringerMode = android.media.AudioManager.RINGER_MODE_NORMAL
+            }
+        } catch (e: Exception) {
+            Log.e("TapService", "Failed to cycle ringer mode: ${e.message}")
         }
     }
 
@@ -145,5 +192,8 @@ class TapAccessibilityService : AccessibilityService() {
         serviceScope.cancel()
         engine.stop()
         unregisterReceiver(systemStateReceiver)
+        if (::cameraManager.isInitialized) {
+            cameraManager.unregisterTorchCallback(torchCallback)
+        }
     }
 }

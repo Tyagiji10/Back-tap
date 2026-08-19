@@ -119,7 +119,7 @@ fun SettingsScreen(viewModel: MainViewModel = hiltViewModel()) {
 
     val availableActions = listOf(
         "NONE", "HOME", "BACK", "RECENTS", "NOTIFICATIONS", "QUICK_SETTINGS", "LOCK_SCREEN", "TAKE_SCREENSHOT",
-        "PLAY_PAUSE", "NEXT_TRACK", "PREVIOUS_TRACK", "VOLUME_UP", "VOLUME_DOWN", "MUTE_UNMUTE"
+        "PLAY_PAUSE", "NEXT_TRACK", "PREVIOUS_TRACK", "VOLUME_UP", "VOLUME_DOWN", "TOGGLE_FLASHLIGHT", "CYCLE_RINGER"
     )
 
     var isAccessibilityEnabled by remember { mutableStateOf(isAccessibilityServiceEnabled(context)) }
