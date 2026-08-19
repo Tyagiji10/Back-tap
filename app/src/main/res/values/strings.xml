@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">BackTap</string>
+    <string name="accessibility_service_description">Enable this service to use Back Tap gestures on the back of your device.</string>
+    <string name="accessibility_service_summary">Back Tap gesture detection</string>
+</resources>
