@@ -267,15 +267,25 @@ fun SettingsScreen(viewModel: MainViewModel = hiltViewModel()) {
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
+                    val sliderPosition = when (sensitivityThreshold) {
+                        8.5f -> 0f
+                        3.5f -> 2f
+                        else -> 1f
+                    }
                     Slider(
-                        value = sensitivityThreshold,
-                        onValueChange = { 
-                            if (it != sensitivityThreshold) {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        value = sliderPosition,
+                        onValueChange = { newValue -> 
+                            val newThreshold = when (newValue) {
+                                0f -> 8.5f
+                                2f -> 3.5f
+                                else -> 6.0f
                             }
-                            viewModel.setSensitivity(it) 
+                            if (newThreshold != sensitivityThreshold) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                viewModel.setSensitivity(newThreshold)
+                            }
                         },
-                        valueRange = 3.5f..8.5f,
+                        valueRange = 0f..2f,
                         steps = 1,
                         colors = SliderDefaults.colors(
                             thumbColor = TextWhite,

@@ -24,26 +24,36 @@ class GestureRecognitionEngine @Inject constructor(
 
     private var accelerometer: Sensor? = null
     private var proximitySensor: Sensor? = null
+    private var gyroscope: Sensor? = null
 
     // State
     private var isEngineRunning = false
     private var currentProximity = -1f // -1 means unknown or not covered yet.
     private var wasFlat = false
+    private var currentGyroX = 0f
+    private var currentGyroY = 0f
+    private var currentGyroZ = 0f
     
     // Config
     var sensitivityThreshold = 2.5f
+    var maxTapThreshold = 9.5f
+    var shakeThreshold = 4.5f
     private val GRAVITY = 9.8f
     private val TABLE_CHECK_MARGIN = 0.5f
+    private val GYRO_SHOCK_THRESHOLD = 2.2f
 
     // Window config
     private val DOUBLE_TAP_WINDOW_MS = 400L
     private val TRIPLE_TAP_WINDOW_MS = 700L
     private val DEBOUNCE_MS = 150L
+    private val COOLDOWN_MS = 500L
+    private val HARD_COLLISION_COOLDOWN_MS = 400L
 
     // Heuristic State
     private var lastPeakTime = 0L
     private var peakCount = 0
     private var firstPeakTime = 0L
+    private var cooldownUntil = 0L
 
     // Events
     private val _gestureEvents = MutableSharedFlow<GestureEvent>()
@@ -59,12 +69,16 @@ class GestureRecognitionEngine @Inject constructor(
         
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY)
+        gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
 
         accelerometer?.let {
             sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
         }
         proximitySensor?.let {
             sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+        gyroscope?.let {
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
         }
         
         isEngineRunning = true
@@ -83,6 +97,13 @@ class GestureRecognitionEngine @Inject constructor(
 
         if (event.sensor.type == Sensor.TYPE_PROXIMITY) {
             currentProximity = event.values[0]
+            return
+        }
+
+        if (event.sensor.type == Sensor.TYPE_GYROSCOPE) {
+            currentGyroX = event.values[0]
+            currentGyroY = event.values[1]
+            currentGyroZ = event.values[2]
             return
         }
 
@@ -123,14 +144,42 @@ class GestureRecognitionEngine @Inject constructor(
             // To be accurate with the prompt's suggested `val zAxisDelta = Math.abs(zAxisAcceleration - GRAVITY - baselineZ)`,
             // since we don't have baselineZ immediately, we'll do a simple low-pass to find baseline, then check delta.
             
+            val currentX = x
+            val currentY = y
             val currentZ = z
-            updateBaselineZ(currentZ)
+            updateBaselines(currentX, currentY, currentZ)
             
+            val now = System.currentTimeMillis()
+            if (now < cooldownUntil) {
+                return
+            }
+
+            val xDelta = abs(currentX - baselineX)
+            val yDelta = abs(currentY - baselineY)
+
+            if (xDelta > shakeThreshold || yDelta > shakeThreshold) {
+                // Device is shaking. Clear tap buffer, set a cooldown, and abort.
+                resetTapBuffer()
+                cooldownUntil = now + COOLDOWN_MS
+                return
+            }
+
             // 1. Directional Filtering (Positive delta only)
             val zAxisDelta = currentZ - baselineZ
 
             if (zAxisDelta > sensitivityThreshold) {
-                val now = System.currentTimeMillis()
+                if (zAxisDelta > maxTapThreshold) {
+                    resetTapBuffer()
+                    cooldownUntil = now + HARD_COLLISION_COOLDOWN_MS
+                    return
+                }
+
+                val gyroMagnitude = kotlin.math.sqrt((currentGyroX * currentGyroX + currentGyroY * currentGyroY + currentGyroZ * currentGyroZ).toDouble()).toFloat()
+                if (gyroMagnitude > GYRO_SHOCK_THRESHOLD) {
+                    resetTapBuffer()
+                    cooldownUntil = now + HARD_COLLISION_COOLDOWN_MS
+                    return
+                }
                 
                 // Discard old taps before adding new ones
                 if (peakCount > 0 && (now - firstPeakTime) > TRIPLE_TAP_WINDOW_MS) {
@@ -180,10 +229,14 @@ class GestureRecognitionEngine @Inject constructor(
         }
     }
 
+    private var baselineX = 0f
+    private var baselineY = 0f
     private var baselineZ = GRAVITY
     private val ALPHA = 0.8f // Low pass filter constant
 
-    private fun updateBaselineZ(currentZ: Float) {
+    private fun updateBaselines(currentX: Float, currentY: Float, currentZ: Float) {
+        baselineX = ALPHA * baselineX + (1 - ALPHA) * currentX
+        baselineY = ALPHA * baselineY + (1 - ALPHA) * currentY
         baselineZ = ALPHA * baselineZ + (1 - ALPHA) * currentZ
     }
 
