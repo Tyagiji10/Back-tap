@@ -174,10 +174,14 @@ fun SettingsScreen(viewModel: MainViewModel = hiltViewModel()) {
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
             if (!hasAccelerometer) {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF330000)),
@@ -309,19 +313,18 @@ fun SettingsScreen(viewModel: MainViewModel = hiltViewModel()) {
                     switchColors = grayscaleSwitchColors
                 )
             }
+            }
             
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Footer
+            // Footer (Pinned to bottom)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp),
+                    .padding(bottom = 16.dp, top = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     "© 2026 Shaurya Tyagi. All rights reserved.",
-                    color = DimGray,
+                    color = TextWhite,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -329,25 +332,24 @@ fun SettingsScreen(viewModel: MainViewModel = hiltViewModel()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         "Designed & built with ",
-                        color = DimGray,
+                        color = TextWhite,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
                     Icon(
                         Icons.Default.FavoriteBorder,
                         contentDescription = "Love",
-                        tint = DimGray,
+                        tint = TextWhite,
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
                         " and a lot of coffee.",
-                        color = DimGray,
+                        color = TextWhite,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 

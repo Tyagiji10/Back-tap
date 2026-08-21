@@ -18,11 +18,20 @@ android {
         versionName = "1.1"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("release.jks")
+            storePassword = "backtap123"
+            keyAlias = "backtap"
+            keyPassword = "backtap123"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
@@ -91,4 +100,7 @@ dependencies {
 
   // DataStore
   implementation(libs.androidx.datastore.preferences)
+
+  // Glance Widget
+  implementation("androidx.glance:glance-appwidget:1.1.0")
 }
