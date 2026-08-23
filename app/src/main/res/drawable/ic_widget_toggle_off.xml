@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Dark Circle Background with dark stroke -->
+    <path
+        android:fillColor="#151719"
+        android:strokeColor="#0A0B0C"
+        android:strokeWidth="1.5"
+        android:pathData="M12,2 A10,10 0 1 1 12,22 A10,10 0 1 1 12,2 Z" />
+    <!-- U Magnet (Grayed out) -->
+    <path
+        android:fillColor="#B0B0B0"
+        android:pathData="M7,8 L7,15 A5,5 0 0 0 17,15 L17,8 L13.5,8 L13.5,15 A1.5,1.5 0 0 1 10.5,15 L10.5,8 Z" />
+    <!-- Left Plus -->
+    <path
+        android:fillColor="#B0B0B0"
+        android:pathData="M3,11.5 L6,11.5 L6,12.5 L3,12.5 Z M4.5,10 L4.5,14 L3.5,14 L3.5,10 Z" />
+    <!-- Right Plus -->
+    <path
+        android:fillColor="#B0B0B0"
+        android:pathData="M18,11.5 L21,11.5 L21,12.5 L18,12.5 Z M19.5,10 L19.5,14 L18.5,14 L18.5,10 Z" />
+    <!-- Slash for OFF state -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M4.5,20.5 L19.5,3.5 L20.5,4.5 L5.5,21.5 Z" />
+</vector>
